@@ -1,0 +1,13 @@
+header:
+  nav:
+    - href: /
+      label: Home
+    - href: /companies
+      label: Companies
+    - href: /about
+      label: About
+    - href: /posts
+      label: Blog
+footer:
+  social:
+    - url: 'https://github.com/tigerxp'

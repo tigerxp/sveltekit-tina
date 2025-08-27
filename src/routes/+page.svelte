@@ -1,5 +1,5 @@
-<h1>Welcome to SvelteKit</h1>
+<h1>Welcome!</h1>
 
 <p>
-	See <a href="/posts">blog posts</a>.
+	Check our <a href="/posts">blog posts</a>.
 </p>

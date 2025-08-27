@@ -2,6 +2,8 @@
 	export let data;
 </script>
 
+<h1>Blog posts</h1>
+
 <ul>
 	{#if data.posts}
 		{#each data.posts as post}
