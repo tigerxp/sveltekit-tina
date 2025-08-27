@@ -31,7 +31,8 @@ export default defineConfig({
       {
         name: "post",
         label: "Posts",
-        path: "content/posts",
+        path: "src/content/posts",
+        format: "md",
         fields: [
           {
             type: "string",
