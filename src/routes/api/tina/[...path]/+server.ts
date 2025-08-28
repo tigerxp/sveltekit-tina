@@ -1,7 +1,7 @@
 // import type { RequestHandler } from './$types';
 
 import { TinaNodeBackend, LocalBackendAuthProvider, type NodeApiHandler } from '@tinacms/datalayer'
-import { TinaAuthJSOptions, AuthJsBackendAuthProvider } from 'tinacms-authjs'
+import { TinaAuthJSOptions, AuthJsBackendAuthProvider } from 'tinacms-authjs/dist'
 
 import databaseClient from '$tina/databaseClient'
 

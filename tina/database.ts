@@ -1,7 +1,7 @@
 import { createDatabase, createLocalDatabase } from '@tinacms/datalayer';
 
 // Change this to your chosen git provider
-import { GitHubProvider } from 'tinacms-gitprovider-github';
+import { GitHubProvider } from 'tinacms-gitprovider-github/dist';
 
 // Change this to your chosen database adapter
 import { Redis } from '@upstash/redis';

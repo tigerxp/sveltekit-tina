@@ -18,7 +18,8 @@ export default defineConfig({
   clientId: process.env.NEXT_PUBLIC_TINA_CLIENT_ID,
   // Get this from tina.io
   token: process.env.TINA_TOKEN,
-  contentApiUrlOverride: '/api/tina/gql',
+  //contentApiUrlOverride: '/api/tina/gql',
+  contentApiUrlOverride: 'http://localhost:5173/api/tina/gql',
   // authProvider: AuthJsBackendAuthProvider,
 
   build: {
