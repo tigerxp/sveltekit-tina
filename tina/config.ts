@@ -2,6 +2,7 @@ import { defineConfig } from "tinacms";
 import Post from "./collection/post";
 import Global from "./collection/global";
 import Company from "./collection/company";
+// import { AuthJsBackendAuthProvider } from 'tinacms-authjs'
 
 // Your hosting provider likely exposes this as an environment variable
 const branch =
@@ -17,6 +18,8 @@ export default defineConfig({
   clientId: process.env.NEXT_PUBLIC_TINA_CLIENT_ID,
   // Get this from tina.io
   token: process.env.TINA_TOKEN,
+  contentApiUrlOverride: '/api/tina/gql',
+  // authProvider: AuthJsBackendAuthProvider,
 
   build: {
     outputFolder: "admin",

@@ -1,0 +1,5 @@
+# Custom Dictionary Words
+authjs
+datalayer
+gitprovider
+hiett
