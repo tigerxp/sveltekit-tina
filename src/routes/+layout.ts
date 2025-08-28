@@ -4,6 +4,6 @@ export async function load() {
     const globals = await client.queries.global({ relativePath: 'index.yaml' });
 
     return {
-        nav: globals.data.global.header?.nav
+        nav: globals.data?.global?.header?.nav || []
     }
 }

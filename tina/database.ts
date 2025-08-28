@@ -5,7 +5,8 @@ import { GitHubProvider } from 'tinacms-gitprovider-github/dist';
 
 // Change this to your chosen database adapter
 import { Redis } from '@upstash/redis';
-import { RedisLevel } from 'upstash-redis-level';
+import pkg from 'upstash-redis-level';
+const { RedisLevel } = pkg;
 
 const isLocal = process.env.TINA_PUBLIC_IS_LOCAL === 'true';
 const branch =
@@ -18,7 +19,7 @@ if (!branch) {
 }
 
 export default isLocal
-    ? // If we are running locally, use a local database that stores data in memory and writes to the locac filesystem on save
+    ? // If we are running locally, use a local database that stores data in memory and writes to the local filesystem on save
     createLocalDatabase()
     : // If we are not running locally, use a database that stores data in redis and Saves data to github
     createDatabase({
