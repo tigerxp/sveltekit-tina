@@ -18,7 +18,7 @@ if (!branch) {
 }
 
 export default isLocal
-	? // If we are running locally, use a local database that stores data in memory and writes to the locac filesystem on save
+	? // If we are running locally, use a local database that stores data in memory and writes to the local filesystem on save
 		createLocalDatabase()
 	: // If we are not running locally, use a database that stores data in redis and Saves data to github
 		createDatabase({

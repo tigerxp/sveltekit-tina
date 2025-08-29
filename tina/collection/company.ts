@@ -3,7 +3,7 @@ import type { Collection } from "tinacms";
 const Company: Collection = {
     label: "Companies",
     name: "company",
-    path: "content/company",
+    path: "src/content/company",
     format: "yaml",
     fields: [
         {

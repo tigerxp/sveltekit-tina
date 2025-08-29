@@ -3,7 +3,7 @@ import type { Collection } from "tinacms";
 const Global: Collection = {
   label: "Global",
   name: "global",
-  path: "content/global",
+  path: "src/content/global",
   format: "yaml",
   ui: {
     global: true,
