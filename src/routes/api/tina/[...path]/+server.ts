@@ -8,7 +8,11 @@ import { IncomingMessage, ServerResponse } from 'http';
 
 const isLocal = process.env.TINA_PUBLIC_IS_LOCAL === 'true';
 
-export const POST: RequestHandler = async ({ request, url }) => {
+const proxyHandler: RequestHandler = async ({ request, url }) => {
+	// TODO: remove this
+	if (request.method !== 'POST' || request.url !== 'http://localhost:5173/api/tina/gql') {
+		console.log('custom proxyHandler request:', request)
+	}
 	try {
 		const incomingMessage = await createIncomingMessage(request, url);
 		const [serverResponse, responsePromise] = createServerResponse();
@@ -18,10 +22,10 @@ export const POST: RequestHandler = async ({ request, url }) => {
 		const response = await responsePromise;
 
 		return response;
-	} catch (error) {
-		console.error('TinaCMS handler error:', error);
+	} catch (e) {
+		console.error('TinaCMS handler error:', e);
 
-		return new Response(JSON.stringify({ error: error.message }), {
+		return new Response(JSON.stringify({ error: e instanceof Error ? e.message : 'Unknown error' }), {
 			status: 500,
 			headers: {
 				'Content-Type': 'application/json'
@@ -30,21 +34,22 @@ export const POST: RequestHandler = async ({ request, url }) => {
 	}
 };
 
+
 const tinaHandler: NodeApiHandler = TinaNodeBackend({
 	authProvider: isLocal
 		? LocalBackendAuthProvider()
 		: AuthJsBackendAuthProvider({
-				authOptions: TinaAuthJSOptions({
-					databaseClient: databaseClient,
-					secret: process.env.AUTH_SECRET || ''
-				})
-			}),
+			authOptions: TinaAuthJSOptions({
+				databaseClient: databaseClient,
+				secret: process.env.AUTH_SECRET || ''
+			})
+		}),
 	databaseClient
 });
 
 async function createIncomingMessage(request: Request, url: URL): Promise<IncomingMessage> {
 	const readable = new Readable({
-		read() {}
+		read() { }
 	});
 
 	const incomingMessage = readable as IncomingMessage;
@@ -77,12 +82,12 @@ function createServerResponse(): [ServerResponse, Promise<Response>] {
 		removeHeader(name: string) {
 			delete headers[name];
 		},
-		write(chunk: any) {
+		write(chunk: unknown) {
 			if (chunk) {
 				body += chunk.toString();
 			}
 		},
-		end(chunk?: any) {
+		end(chunk?: unknown) {
 			if (chunk) {
 				body += chunk.toString();
 			}
@@ -97,8 +102,8 @@ function createServerResponse(): [ServerResponse, Promise<Response>] {
 
 	const responsePromise = new Promise<Response>((resolve) => {
 		const originalEnd = serverResponse.end.bind(serverResponse);
-		serverResponse.end = (chunk?: any) => {
-			originalEnd(chunk);
+		serverResponse.end = () => {
+			originalEnd();
 
 			const response = new Response(body || null, {
 				status: statusCode,
@@ -111,3 +116,6 @@ function createServerResponse(): [ServerResponse, Promise<Response>] {
 
 	return [serverResponse, responsePromise];
 }
+
+export const GET = proxyHandler;
+export const POST = proxyHandler;
