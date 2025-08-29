@@ -1,103 +1,113 @@
-// import type { RequestHandler } from './$types';
+import type { RequestHandler } from '@sveltejs/kit';
+import { TinaNodeBackend, LocalBackendAuthProvider, type NodeApiHandler } from '@tinacms/datalayer';
+import { TinaAuthJSOptions, AuthJsBackendAuthProvider } from 'tinacms-authjs/dist';
+import databaseClient from '$tina/databaseClient';
 
-import { TinaNodeBackend, LocalBackendAuthProvider, type NodeApiHandler } from '@tinacms/datalayer'
-import { TinaAuthJSOptions, AuthJsBackendAuthProvider } from 'tinacms-authjs/dist'
+import { Readable } from 'stream';
+import { IncomingMessage, ServerResponse } from 'http';
 
-import databaseClient from '$tina/databaseClient'
+const isLocal = process.env.TINA_PUBLIC_IS_LOCAL === 'true';
 
-// import { Readable } from 'stream';
-// import { IncomingMessage, ServerResponse } from 'http';
-// import { Socket } from 'net';
+export const POST: RequestHandler = async ({ request, url }) => {
+	try {
+		const incomingMessage = await createIncomingMessage(request, url);
+		const [serverResponse, responsePromise] = createServerResponse();
 
-const isLocal = process.env.TINA_PUBLIC_IS_LOCAL === 'true'
+		await tinaHandler(incomingMessage, serverResponse);
+
+		const response = await responsePromise;
+
+		return response;
+	} catch (error) {
+		console.error('TinaCMS handler error:', error);
+
+		return new Response(JSON.stringify({ error: error.message }), {
+			status: 500,
+			headers: {
+				'Content-Type': 'application/json'
+			}
+		});
+	}
+};
 
 const tinaHandler: NodeApiHandler = TinaNodeBackend({
-    authProvider: isLocal
-        ? LocalBackendAuthProvider()
-        : AuthJsBackendAuthProvider({
-            authOptions: TinaAuthJSOptions({
-                databaseClient: databaseClient,
-                secret: process.env.AUTH_SECRET || '',
-            }),
-        }),
-    databaseClient,
-})
+	authProvider: isLocal
+		? LocalBackendAuthProvider()
+		: AuthJsBackendAuthProvider({
+				authOptions: TinaAuthJSOptions({
+					databaseClient: databaseClient,
+					secret: process.env.AUTH_SECRET || ''
+				})
+			}),
+	databaseClient
+});
 
-// handler()
+async function createIncomingMessage(request: Request, url: URL): Promise<IncomingMessage> {
+	const readable = new Readable({
+		read() {}
+	});
 
-// export const POST: RequestHandler = async ({ request, params }) => {
-//     console.log('Tina API call: ', request, params, tinaHandler);
-//     const resp = new Response();
+	const incomingMessage = readable as IncomingMessage;
 
-//     return resp;
-// const m: IncomingMessage = new IncomingMessage();
-// const r = handler(request, resp)
-//   const body = await request.json();
+	incomingMessage.method = request.method;
+	incomingMessage.url = url.pathname + url.search;
+	incomingMessage.headers = Object.fromEntries(request.headers.entries());
 
-//   // delegate to Tina database API
-//   try {
-//     const result = await db.apiRouter.handle({
-//       body,
-//       query: params.path ? params.path.split('/') : [],
-//       method: 'POST',
-//     });
+	const body = await request.json();
+	readable.push(JSON.stringify(body));
+	readable.push(null);
+	incomingMessage.body = body;
 
-//     return new Response(JSON.stringify(result), {
-//       headers: { 'Content-Type': 'application/json' },
-//       status: 200,
-//     });
-//   } catch (err: any) {
-//     return new Response(
-//       JSON.stringify({ error: err.message ?? 'Unknown error' }),
-//       { status: 500 }
-//     );
-//   }
-// };
+	return incomingMessage;
+}
 
-// export const POST: RequestHandler = async ({ request }) => {
-//   return new Promise(async (resolve) => {
-//     // Create mock IncomingMessage
-//     const req: IncomingMessage = new IncomingMessage(new Socket());
+function createServerResponse(): [ServerResponse, Promise<Response>] {
+	let statusCode = 200;
+	let headers: Record<string, string> = {};
+	let body = '';
 
-// //    const req = new Readable();
-//     req.url = new URL(request.url).pathname;
-//     req.method = request.method;
-//     req.headers = Object.fromEntries(request.headers);
+	const serverResponse = {
+		statusCode,
+		setHeader(name: string, value: string | string[]) {
+			headers[name] = Array.isArray(value) ? value.join(', ') : value;
+		},
+		getHeader(name: string) {
+			return headers[name];
+		},
+		removeHeader(name: string) {
+			delete headers[name];
+		},
+		write(chunk: any) {
+			if (chunk) {
+				body += chunk.toString();
+			}
+		},
+		end(chunk?: any) {
+			if (chunk) {
+				body += chunk.toString();
+			}
+		},
+		writeHead(code: number, responseHeaders?: Record<string, string>) {
+			statusCode = code;
+			if (responseHeaders) {
+				headers = { ...headers, ...responseHeaders };
+			}
+		}
+	} as ServerResponse;
 
-//     // If there is a body, push it into the stream
-//     if (request.method !== 'GET' && request.method !== 'HEAD') {
-//       const body = await request.arrayBuffer();
-//       req.push(Buffer.from(body));
-//     }
-//     req.push(null); // end of stream
+	const responsePromise = new Promise<Response>((resolve) => {
+		const originalEnd = serverResponse.end.bind(serverResponse);
+		serverResponse.end = (chunk?: any) => {
+			originalEnd(chunk);
 
-//     // Create mock ServerResponse
-//     const res = new ServerResponse(req);
+			const response = new Response(body || null, {
+				status: statusCode,
+				headers
+			});
 
-//     // Collect body chunks
-//     const chunks: any[] = [];
-//     res.write = ((write) => (chunk: any) => {
-//       chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-//       return true;
-//     })(res.write);
+			resolve(response);
+		};
+	});
 
-//     res.end = ((end) => (chunk?: any) => {
-//       if (chunk) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-//       end.call(res, chunk);
-//       resolve(
-//         new Response(Buffer.concat(chunks), {
-//           status: res.statusCode,
-//           headers: Object.fromEntries(
-//             Object.entries(res.getHeaders()).map(([k, v]) => [k, String(v)])
-//           ),
-//         })
-//       );
-//     })(res.end);
-
-//     // Call Tina’s Node handler
-//     tinaHandler(req, res);
-//   });
-// };
-
-export const POST = tinaHandler;
-export const GET = tinaHandler;
+	return [serverResponse, responsePromise];
+}
